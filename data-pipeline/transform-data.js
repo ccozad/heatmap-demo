@@ -1,5 +1,3 @@
-// Read in each line from a csv file and transform the data
-// into geoJSON format
 const fs = require('fs');
 const readline = require('readline');
 const path = require('path');
@@ -12,59 +10,32 @@ if (!fileName) {
 } else if (!fs.existsSync(fileName)) {
     console.error(`File ${fileName} does not exist.`);
     process.exit(1);
-} else if (path.extname(fileName) !== '.csv') {
-    console.error('The provided file is not a CSV file.');
+} else if (path.extname(fileName) !== '.geojson') {
+    console.error('The provided file is not a geojson file.');
     process.exit(1);
 } else {
     console.log(`Processing file: ${fileName}`);
 }
 
-const inputStream = fs.createReadStream(fileName);
-const rl = readline.createInterface({
-    input: inputStream
-});
-const outputFileName = 'data.json';
-const outputStream = fs.createWriteStream(outputFileName);
-output = {"type": "FeatureCollection", "features": []};
-rl.on('line', (line) => {
-    const columns = line.split(',');
+// Read in all of the file and parse it as JSON
+const fileContent = fs.readFileSync(fileName, 'utf8');
+const data = JSON.parse(fileContent);
+const transformedData = {
+    type: 'FeatureCollection',
+    features: data.features
+        .filter(feature => feature.geometry && feature.geometry.type === 'Point' && feature.properties.OFFENSE === "MOTOR VEHICLE THEFT")
+        .map(feature => ({
+            type: 'Feature',
+            // Extract just the CCN property
+            properties: { 
+                CCN: feature.properties.CCN,
+                // age is days since the date stored in REPORT_DAT, which has a
+                // date format of 2024-06-13T16:01:39Z
+                age: Math.floor((Date.now() - new Date(feature.properties.REPORT_DAT)) / (1000 * 60 * 60 * 24))
+            },
+            geometry: feature.geometry
+    }))
+};
 
-    //Columns: name,id,nametype,recclass,mass,fall,year,reclat,reclong,GeoLocation
-
-    const id = columns[1].trim();
-    const massStr = columns[4].trim();
-    if (!id || !massStr) {
-      //console.error(`Invalid data in line: ${line}`);
-      return;
-    }
-    const mass = parseFloat(columns[4].trim());
-    const latitude = parseFloat(columns[7].trim());
-    const longitude = parseFloat(columns[8].trim());
-
-    if (isNaN(latitude) || isNaN(longitude)) {
-        //console.error(`Invalid coordinates for ${line}`);
-        return;
-    }
-
-    const feature = {
-        type: 'Feature',
-        properties: { id, mass },
-        geometry: {
-            type: 'Point',
-            coordinates: [longitude, latitude]
-        }
-    };
-
-    output.features.push(feature);
-});
-
-rl.on('close', () => {
-    console.log('Finished processing file.');
-    outputStream.write(JSON.stringify(output, null, 2), (err) => {
-        if (err) {
-            console.error(`Error writing to output file: ${err.message}`);
-        } else {
-            console.log(`GeoJSON data written to ${outputFileName}`);
-        }
-    });
-});
+// Write the transformed data to a new file
+fs.writeFileSync("data.json", JSON.stringify(transformedData, null, 2));

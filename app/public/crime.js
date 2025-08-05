@@ -6,7 +6,7 @@ axios.get('/data.json').then(response => {
       return {
         lat: feature.geometry.coordinates[1],
         lng: feature.geometry.coordinates[0],
-        mass: feature.properties.mass
+        age: feature.properties.age
       }
     });
     
@@ -20,21 +20,21 @@ axios.get('/data.json').then(response => {
 
     // Configure and create the heatmap.js layer
     let cfg = {
-      "radius": 20,
+      "radius": 4,
       "useLocalExtrema": true,
-      valueField: 'mass'
+      valueField: 'age'
     }
 
     let heatmapLayer = new HeatmapOverlay(cfg)
 
     // Determine min/max (from sales.js file) for the heatmap.js plugin
-    let min = Math.min(...points.map(point=> point.mass));
-    let max = Math.max(...points.map(point => point.mass));
+    let min = Math.min(...points.map(point=> point.age));
+    let max = Math.max(...points.map(point => point.age));
 
     // Create the overall Leaflet map using the two layers we created
     let propertyHeatMap = new L.Map('map', {
-      center: new L.LatLng(39.275, -76.613),
-      zoom: 10,
+      center: new L.LatLng(38.904722, -77.016389),
+      zoom: 12,
       layers: [baseLayer, heatmapLayer]
     })
 
