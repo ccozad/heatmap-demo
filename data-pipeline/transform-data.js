@@ -26,7 +26,7 @@ const transformedData = {
         .filter(feature => feature.geometry && feature.geometry.type === 'Point' && feature.properties.OFFENSE === "MOTOR VEHICLE THEFT")
         .map(feature => ({
             type: 'Feature',
-            // Extract just the CCN property
+            //Extract just the CCN property and calculate the age
             properties: { 
                 CCN: feature.properties.CCN,
                 // age is days since the date stored in REPORT_DAT, which has a
