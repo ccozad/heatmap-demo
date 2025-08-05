@@ -47,6 +47,65 @@ const transformedData = {
 };
 ```
 
+Each feature in the original data looks similar to:
+```json
+{ 
+    "type": "Feature", 
+    "properties": { 
+        "CCN": "24089883", 
+        "REPORT_DAT": "2024-06-13T16:01:39Z", 
+        "SHIFT": "DAY", 
+        "METHOD": "OTHERS", 
+        "OFFENSE": "THEFT F/AUTO", 
+        "BLOCK": "3000 - 3099 BLOCK OF SEDGWICK STREET NW", 
+        "XBLOCK": 394578.43, 
+        "YBLOCK": 141325.32, 
+        "WARD": "3", 
+        "ANC": "3C", 
+        "DISTRICT": "2", 
+        "PSA": "203", 
+        "NEIGHBORHOOD_CLUSTER": "Cluster 12", 
+        "BLOCK_GROUP": "000600 1", 
+        "CENSUS_TRACT": "000600", 
+        "VOTING_PRECINCT": "Precinct 27", 
+        "LATITUDE": 38.9398002378, 
+        "LONGITUDE": -77.062535800500001, 
+        "BID": null, 
+        "START_DATE": "2024-06-13T15:54:00Z", 
+        "END_DATE": "2024-06-13T15:55:00Z", 
+        "OBJECTID": 748354431, 
+        "OCTO_RECORD_ID": null 
+    }, 
+    "geometry": { 
+        "type": "Point", 
+        "coordinates": [ 
+            -77.062538105942409, 
+            38.939808031652007 
+        ] 
+    }
+}
+
+```
+
+Each feature in the transformed data looks similar to:
+```json
+{
+    "type": "Feature",
+    "properties": {
+        "CCN": "24143013",
+        "age": 322
+    },
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.97595710905172,
+          38.913029933944934
+        ]
+    }
+}
+```
+
+
 ## Heatmap example
 
 The headmap is rendered inside of a static html page. CSS and Javascript files are loaded from public CDN sources. The leaflet heatmap plugin was not found on a public CDN so it's included here for convenience. If you plan on using the heatmap leaflet script in a commercial application, see Patrick Wied's website for heatmap.js for details on commercial use.
