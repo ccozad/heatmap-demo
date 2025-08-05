@@ -17,7 +17,7 @@ This repo has a minimal example for creating a heatmap overlaid on a map. We'll 
 
 # Data
 
-This demo uses2024 Washington DC crime data from the US government data clearinghouse https://catalog.data.gov/dataset/crime-incidents-in-2024
+This demo uses 2024 Washington DC crime data from the US government data clearinghouse https://catalog.data.gov/dataset/crime-incidents-in-2024
 
 # Understanding the code
 
