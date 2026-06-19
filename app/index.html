@@ -30,13 +30,18 @@
     </head>
     <body>
         <header class="app-header">
-            <h1>Washington DC Crime Heatmap (2024)</h1>
+            <h1 id="title">City Crime Heatmap (2024)</h1>
             <p class="subtitle">
-                Open incident data from the DC Metropolitan Police Department.
+                Open crime-incident data, rendered as an interactive heatmap.
             </p>
         </header>
 
         <section class="controls" aria-label="Heatmap controls">
+            <div class="control">
+                <label for="preset">City</label>
+                <select id="preset"></select>
+            </div>
+
             <div class="control">
                 <label for="offense">Crime type</label>
                 <select id="offense"></select>
@@ -86,12 +91,7 @@
         <p id="status" class="status" aria-live="polite"></p>
 
         <footer class="app-footer">
-            Source:
-            <a
-                href="https://catalog.data.gov/dataset/crime-incidents-in-2024"
-                rel="noopener"
-                >DC Crime Incidents in 2024</a
-            >. Heatmap by
+            Source: <a id="source-link" href="#" rel="noopener"></a>. Heatmap by
             <a
                 href="https://www.patrick-wied.at/static/heatmapjs/"
                 rel="noopener"

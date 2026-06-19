@@ -3,6 +3,7 @@
 // (typed in globals.d.ts, declared for ESLint in eslint.config.js).
 
 import './style.css';
+import { PRESETS, type Preset } from './presets';
 import type {
     CrimePoint,
     HeatmapPoint,
@@ -12,7 +13,6 @@ import type {
 type IntensityMode = 'age' | 'count';
 
 const ALL = 'ALL';
-const DC_CENTER = { lat: 38.904722, lng: -77.016389 };
 
 // ---- DOM helpers ----
 
@@ -24,6 +24,9 @@ function el<T extends HTMLElement>(id: string): T {
     return node as T;
 }
 
+const titleEl = el<HTMLHeadingElement>('title');
+const sourceLink = el<HTMLAnchorElement>('source-link');
+const presetSelect = el<HTMLSelectElement>('preset');
 const offenseSelect = el<HTMLSelectElement>('offense');
 const radiusInput = el<HTMLInputElement>('radius');
 const radiusValue = el<HTMLSpanElement>('radius-value');
@@ -99,8 +102,8 @@ const baseLayer = L.tileLayer(
 );
 
 const map = new L.Map('map', {
-    center: new L.LatLng(DC_CENTER.lat, DC_CENTER.lng),
-    zoom: 12,
+    center: new L.LatLng(PRESETS[0].center.lat, PRESETS[0].center.lng),
+    zoom: PRESETS[0].zoom,
     layers: [baseLayer],
 });
 
@@ -169,7 +172,7 @@ function render(): void {
             : `${points.length.toLocaleString()} incidents · ${dateRange(points)} · ${offenseLabel}`;
 }
 
-function populateOffenses(points: CrimePoint[]): void {
+function populateOffenses(points: CrimePoint[], selected?: string): void {
     const offenses = Array.from(
         new Set(points.map((point) => point.offense)),
     ).sort();
@@ -185,9 +188,27 @@ function populateOffenses(points: CrimePoint[]): void {
     for (const offense of offenses) {
         addOption(offense, titleCase(offense));
     }
+    offenseSelect.value =
+        selected && offenses.includes(selected) ? selected : ALL;
+}
+
+function populatePresets(): void {
+    presetSelect.replaceChildren();
+    for (const preset of PRESETS) {
+        const option = document.createElement('option');
+        option.value = preset.id;
+        option.textContent = preset.name;
+        presetSelect.append(option);
+    }
 }
 
 function bindEvents(): void {
+    presetSelect.addEventListener('change', () => {
+        const preset = PRESETS.find((p) => p.id === presetSelect.value);
+        if (preset) {
+            void loadPreset(preset);
+        }
+    });
     offenseSelect.addEventListener('change', render);
     intensitySelect.addEventListener('change', render);
     radiusInput.addEventListener('input', render);
@@ -195,10 +216,12 @@ function bindEvents(): void {
 
 // ---- Load ----
 
-showOverlay('Loading crime data…');
-axios
-    .get<TransformedFeatureCollection>('/data.json')
-    .then((response) => {
+async function loadPreset(preset: Preset): Promise<void> {
+    showOverlay(`Loading ${preset.name} crime data…`);
+    try {
+        const response = await axios.get<TransformedFeatureCollection>(
+            preset.dataPath,
+        );
         allPoints = response.data.features
             .filter(
                 (feature) =>
@@ -213,16 +236,30 @@ axios
             }));
 
         if (allPoints.length === 0) {
-            showOverlay('No crime data available.', true);
+            showOverlay(`No crime data available for ${preset.name}.`, true);
             return;
         }
 
-        populateOffenses(allPoints);
-        bindEvents();
+        titleEl.textContent = `${preset.name} Crime Heatmap (2024)`;
+        sourceLink.textContent = preset.source.name;
+        sourceLink.href = preset.source.url;
+        map.setView(
+            new L.LatLng(preset.center.lat, preset.center.lng),
+            preset.zoom,
+        );
+        populateOffenses(allPoints, preset.defaultOffense);
         render();
         hideOverlay();
-    })
-    .catch((error: unknown) => {
+    } catch (error: unknown) {
         console.error(error);
-        showOverlay('Failed to load crime data. Please retry later.', true);
-    });
+        showOverlay(
+            `Failed to load ${preset.name} crime data. Please retry later.`,
+            true,
+        );
+    }
+}
+
+populatePresets();
+bindEvents();
+presetSelect.value = PRESETS[0].id;
+void loadPreset(PRESETS[0]);
