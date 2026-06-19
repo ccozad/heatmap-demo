@@ -8,9 +8,12 @@ export interface PointGeometry {
 }
 
 export interface TransformedFeatureProperties {
-    CCN: string;
+    // Offense type, e.g. "MOTOR VEHICLE THEFT" (drives the crime-type filter).
+    offense: string;
     // Days since the incident was reported, computed at transform time.
     age: number;
+    // Date the incident was reported, YYYY-MM-DD (drives the date-range status).
+    date: string;
 }
 
 export interface TransformedFeature {
@@ -24,10 +27,20 @@ export interface TransformedFeatureCollection {
     features: TransformedFeature[];
 }
 
-// A single point handed to the heatmap.js layer. `age` is the intensity source
-// (see valueField in crime.ts).
+// A crime incident flattened for the browser: map coordinates plus the fields
+// the controls/status line read.
+export interface CrimePoint {
+    lat: number;
+    lng: number;
+    offense: string;
+    age: number;
+    date: string;
+}
+
+// A single point handed to the heatmap.js layer. `value` is the intensity
+// source the layer reads via valueField (see crime.ts).
 export interface HeatmapPoint {
     lat: number;
     lng: number;
-    age: number;
+    value: number;
 }

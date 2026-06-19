@@ -3,19 +3,13 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Washington DC Motor Vehicle Theft 2024</title>
+        <title>Washington DC Crime Heatmap (2024)</title>
         <link
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
             integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
             crossorigin=""
         />
-        <style>
-            #map {
-                width: 800px;
-                height: 600px;
-            }
-        </style>
         <script
             src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -35,8 +29,77 @@
         ></script>
     </head>
     <body>
-        <h1>Washington DC Motor Vehicle Theft 2024</h1>
-        <div id="map"></div>
+        <header class="app-header">
+            <h1>Washington DC Crime Heatmap (2024)</h1>
+            <p class="subtitle">
+                Open incident data from the DC Metropolitan Police Department.
+            </p>
+        </header>
+
+        <section class="controls" aria-label="Heatmap controls">
+            <div class="control">
+                <label for="offense">Crime type</label>
+                <select id="offense"></select>
+            </div>
+
+            <div class="control">
+                <label for="radius"
+                    >Radius: <span id="radius-value"></span
+                ></label>
+                <input
+                    id="radius"
+                    type="range"
+                    min="2"
+                    max="20"
+                    step="1"
+                    value="6"
+                />
+            </div>
+
+            <div class="control">
+                <label for="intensity">Intensity</label>
+                <select id="intensity">
+                    <option value="age">Recency (age of incident)</option>
+                    <option value="count">Density (incident count)</option>
+                </select>
+            </div>
+        </section>
+
+        <div class="map-wrap">
+            <div id="map"></div>
+
+            <div id="overlay" class="overlay" role="status" aria-live="polite">
+                <div class="overlay-card">
+                    <span id="overlay-message">Loading crime data…</span>
+                </div>
+            </div>
+
+            <div class="legend" aria-hidden="true">
+                <div class="legend-bar"></div>
+                <div class="legend-labels">
+                    <span id="legend-low">Low</span>
+                    <span id="legend-high">High</span>
+                </div>
+            </div>
+        </div>
+
+        <p id="status" class="status" aria-live="polite"></p>
+
+        <footer class="app-footer">
+            Source:
+            <a
+                href="https://catalog.data.gov/dataset/crime-incidents-in-2024"
+                rel="noopener"
+                >DC Crime Incidents in 2024</a
+            >. Heatmap by
+            <a
+                href="https://www.patrick-wied.at/static/heatmapjs/"
+                rel="noopener"
+                >heatmap.js</a
+            >
+            on <a href="https://leafletjs.com/" rel="noopener">Leaflet</a>.
+        </footer>
+
         <script type="module" src="/src/crime.ts"></script>
     </body>
 </html>
