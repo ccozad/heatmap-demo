@@ -4,7 +4,8 @@
 export interface Preset {
     id: string;
     name: string;
-    // Path served from public/, e.g. /data.dc.json
+    // File in public/, relative to the app base, e.g. data.dc.json
+    // (resolved against import.meta.env.BASE_URL so it works under /heatmap-demo/).
     dataPath: string;
     center: { lat: number; lng: number };
     zoom: number;
@@ -18,7 +19,7 @@ export const PRESETS: Preset[] = [
     {
         id: 'dc',
         name: 'Washington, DC',
-        dataPath: '/data.dc.json',
+        dataPath: 'data.dc.json',
         center: { lat: 38.904722, lng: -77.016389 },
         zoom: 12,
         defaultOffense: 'MOTOR VEHICLE THEFT',
@@ -30,7 +31,7 @@ export const PRESETS: Preset[] = [
     {
         id: 'baltimore',
         name: 'Baltimore, MD',
-        dataPath: '/data.baltimore.json',
+        dataPath: 'data.baltimore.json',
         center: { lat: 39.2904, lng: -76.6122 },
         zoom: 12,
         defaultOffense: 'AUTO THEFT',

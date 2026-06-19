@@ -47,3 +47,7 @@ The heatmap reads each point's `value` (set via `valueField: 'value'`) against t
 - No test tooling exists yet; "verifying" means `npm run build`/`npm run preview` and loading the page in a browser. TypeScript (`npm run typecheck`), ESLint + Prettier are wired (`npm run lint` / `npm run format`).
 - `data-pipeline/transform-data.ts` writes `data.json` to the current directory; it must be copied to `app/public/data.json` to be served. Keep them in sync manually.
 - The leaflet-heatmap plugin (heatmap.js by Patrick Wied) has commercial-use terms — see https://www.patrick-wied.at/static/heatmapjs/ before reusing in a commercial product.
+
+## Deploy
+
+`.github/workflows/deploy.yml` builds `app/` and publishes `app/dist/` to GitHub Pages on push to `main` (live at https://ccozad.github.io/heatmap-demo/). A project Pages site is served under `/heatmap-demo/`, so `vite.config.ts` sets `base` to `/heatmap-demo/` for production builds (overridable via `VITE_BASE`). Anything fetched at runtime must be resolved against `import.meta.env.BASE_URL` (see `loadPreset` in `crime.ts`) — a bare `/data.dc.json` would 404 under the base path.
