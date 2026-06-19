@@ -219,9 +219,10 @@ function bindEvents(): void {
 async function loadPreset(preset: Preset): Promise<void> {
     showOverlay(`Loading ${preset.name} crime data…`);
     try {
-        const response = await axios.get<TransformedFeatureCollection>(
-            preset.dataPath,
-        );
+        // Resolve against the app base so the path works under /heatmap-demo/
+        // on GitHub Pages as well as at the root in dev.
+        const url = `${import.meta.env.BASE_URL}${preset.dataPath}`;
+        const response = await axios.get<TransformedFeatureCollection>(url);
         allPoints = response.data.features
             .filter(
                 (feature) =>

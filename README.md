@@ -2,6 +2,8 @@
 
 This repo has a minimal example for creating a heatmap overlaid on a map. We'll use crime statistics as an interesting dataset to visualize.
 
+**Live demo: https://ccozad.github.io/heatmap-demo/**
+
 ![Heatmap example](/images/heatmap.png?raw=true "Heatmap example")
 
 # Technology
