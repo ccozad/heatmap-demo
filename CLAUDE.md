@@ -19,7 +19,7 @@ npm run lint       # ESLint (flat config, typescript-eslint)
 npm run format     # Prettier (.prettierrc)
 ```
 
-Data pipeline (from `/data-pipeline`, separate package): `npm install`, then `npm run transform <file.geojson>` (runs the TS script via `tsx`); `npm run typecheck` to type-check.
+Data pipeline (from `/data-pipeline`, separate package): `npm install`, then `npm run transform -- <file.geojson> [--out <f>] [--offense-field <n>] [--date-field <n>] [--offenses "A,B"]` (runs the TS script via `tsx`); `npm run typecheck` to type-check. See `data-pipeline/README.md` for the per-city refresh commands.
 
 Regenerate the data file (from `/data-pipeline`):
 ```bash
@@ -32,11 +32,11 @@ The script's output `data.json` must be copied to `app/public/data.json` to be s
 
 Two independent pieces with a hand-carried data handoff between them:
 
-1. **`data-pipeline/transform-data.ts`** — An offline, one-shot TypeScript script (run via `tsx`). Reads the full DC crime geojson, filters to Point features in a curated offense set (`CURATED_OFFENSES` — 6 violent/vehicle crime types), and reduces each feature to `offense`, a computed `age` (days since `REPORT_DAT`), and `date` (YYYY-MM-DD), plus `geometry`. Output is minified. `REPORT_DAT` may be an ISO string (data.gov download) or epoch ms (ArcGIS feed) — both are handled. This shrinking is the whole point: it cuts browser load time. To change which crimes/fields are kept, edit `CURATED_OFFENSES` / the `isCuratedPoint` predicate / the `.map` here. Note `age` is computed at transform time relative to `Date.now()`, so it is baked into `data.json` and only refreshes when the pipeline is re-run.
+1. **`data-pipeline/transform-data.ts`** — An offline, one-shot TypeScript script (run via `tsx`), parameterized by CLI flags (`--out`, `--offense-field`, `--date-field`, `--offenses`) so it works for any city's export. Reads a full crime geojson, keeps Point features (optionally filtered to an offense set), and reduces each to `offense`, a computed `age` (days since the report date), and `date` (YYYY-MM-DD), plus `geometry`. Output is minified; dates may be ISO strings or epoch ms; (0,0) points are dropped. `age` is computed at transform time relative to `Date.now()`, so it is baked into the output and only refreshes when the pipeline is re-run.
 
-2. **`app/`** — A Vite static site in TypeScript. `app/index.html` is the Vite entry (markup for the control panel, legend, status line, and loading/error overlay); `app/src/crime.ts` is the bundled ESM module; `app/src/types.ts` holds the dataset interfaces; `app/src/style.css` (imported from `crime.ts`) holds the responsive layout; `app/public/` holds assets served at the web root (`data.json`, the vendored `leaflet-heatmap.js`). Build output lands in `app/dist/`.
+2. **`app/`** — A Vite static site in TypeScript. `app/index.html` is the Vite entry (markup for the control panel, legend, status line, and loading/error overlay); `app/src/crime.ts` is the bundled ESM module; `app/src/presets.ts` is the city registry; `app/src/types.ts` holds the dataset interfaces; `app/src/style.css` (imported from `crime.ts`) holds the responsive layout; `app/public/` holds assets served at the web root (one `data.<city>.json` per preset, the vendored `leaflet-heatmap.js`). Build output lands in `app/dist/`.
    - `index.html` loads Leaflet, axios, and heatmap.js from CDNs (pinned, with SRI hashes); `leaflet-heatmap.js` (the Leaflet plugin) is vendored locally because it isn't on a public CDN. These arrive as globals (`L`, `axios`, `HeatmapOverlay`) — typed as ambient globals in `app/src/globals.d.ts` (and declared for ESLint in `eslint.config.js`) so the ESM module can reference them without importing/bundling the libraries.
-   - `crime.ts` is the entry point: fetches `/data.json`, flattens features to `CrimePoint`s, populates the crime-type dropdown, creates the `L.Map` + base layer once, then `render()` (re)builds the `HeatmapOverlay` on every control change.
+   - `crime.ts` is the entry point: creates the `L.Map` + base layer once, then `loadPreset()` fetches the selected city's `data.<city>.json`, re-centers the map, repopulates the crime-type dropdown, and updates the title/source; `render()` (re)builds the `HeatmapOverlay` on every control change. Add a city by shipping its `data.<id>.json` and appending to `PRESETS` in `presets.ts`.
 
 ### Heatmap intensity model
 

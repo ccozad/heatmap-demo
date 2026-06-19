@@ -1,19 +1,27 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseArgs } from 'node:util';
 
-// Offense types kept for the demo. A curated violent + vehicle-crime set: rich
-// enough for the crime-type dropdown, small enough to keep data.json snappy.
-// (Issue #4 makes this configurable from the CLI.)
-const CURATED_OFFENSES = new Set([
-    'MOTOR VEHICLE THEFT',
-    'ROBBERY',
-    'ASSAULT W/DANGEROUS WEAPON',
-    'BURGLARY',
-    'HOMICIDE',
-    'SEX ABUSE',
-]);
-
-// ---- Source (raw DC crime export) shapes ----
+// Reduce a full crime GeoJSON export down to the fields the heatmap app needs:
+// { offense, age, date } + Point geometry. Source field names differ per city,
+// so the offense/date property names (and the offense filter) are CLI options.
+//
+// Usage:
+//   npm run transform -- <input.geojson> [options]
+//
+// Options:
+//   --out <file>            output path (default: data.json)
+//   --offense-field <name>  source property for the crime type (default: OFFENSE)
+//   --date-field <name>     source property for the report date (default: REPORT_DAT)
+//   --offenses "A,B,C"      keep only these offense types (default: keep all)
+//
+// Examples:
+//   npm run transform -- Crime_Incidents_in_2024.geojson \
+//     --out data.dc.json \
+//     --offenses "MOTOR VEHICLE THEFT,ROBBERY,ASSAULT W/DANGEROUS WEAPON,BURGLARY,HOMICIDE,SEX ABUSE"
+//   npm run transform -- baltimore_part1_2024.geojson \
+//     --out data.baltimore.json --offense-field Description --date-field CrimeDateTime \
+//     --offenses "AUTO THEFT,ROBBERY,AGG. ASSAULT,BURGLARY,HOMICIDE,RAPE"
 
 interface PointGeometry {
     type: 'Point';
@@ -21,26 +29,16 @@ interface PointGeometry {
     coordinates: [number, number];
 }
 
-interface RawCrimeProperties {
-    CCN: string;
-    // ISO string (data.gov download) or epoch milliseconds (ArcGIS feed).
-    REPORT_DAT: string | number;
-    OFFENSE: string;
-    [key: string]: unknown;
-}
-
-interface RawCrimeFeature {
+interface RawFeature {
     type: 'Feature';
-    properties: RawCrimeProperties;
-    geometry: PointGeometry | { type: string; coordinates: unknown } | null;
+    properties: Record<string, unknown>;
+    geometry: { type: string; coordinates: unknown } | null;
 }
 
 interface RawFeatureCollection {
     type: 'FeatureCollection';
-    features: RawCrimeFeature[];
+    features: RawFeature[];
 }
-
-// ---- Transformed (browser-ready) shapes ----
 
 interface TransformedFeature {
     type: 'Feature';
@@ -53,8 +51,24 @@ interface TransformedFeatureCollection {
     features: TransformedFeature[];
 }
 
-// The file name is the first argument
-const fileName = process.argv[2];
+const { values, positionals } = parseArgs({
+    allowPositionals: true,
+    options: {
+        out: { type: 'string', default: 'data.json' },
+        'offense-field': { type: 'string', default: 'OFFENSE' },
+        'date-field': { type: 'string', default: 'REPORT_DAT' },
+        offenses: { type: 'string' },
+    },
+});
+
+const fileName = positionals[0];
+const outPath = values.out;
+const offenseField = values['offense-field'];
+const dateField = values['date-field'];
+const offenseFilter = values.offenses
+    ? new Set(values.offenses.split(',').map((o) => o.trim()))
+    : null;
+
 if (!fileName) {
     console.error('Please provide a geojson file name as an argument.');
     process.exit(1);
@@ -64,45 +78,60 @@ if (!fileName) {
 } else if (path.extname(fileName) !== '.geojson') {
     console.error('The provided file is not a geojson file.');
     process.exit(1);
-} else {
-    console.log(`Processing file: ${fileName}`);
 }
-
-// Keep only Point-geometry incidents in the curated offense set. The type
-// predicate narrows geometry to PointGeometry for the map step below.
-function isCuratedPoint(
-    feature: RawCrimeFeature,
-): feature is RawCrimeFeature & { geometry: PointGeometry } {
-    return (
-        !!feature.geometry &&
-        feature.geometry.type === 'Point' &&
-        CURATED_OFFENSES.has(feature.properties.OFFENSE)
-    );
-}
+console.log(`Processing file: ${fileName}`);
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-// Read in all of the file and parse it as JSON
+function isPoint(geometry: RawFeature['geometry']): geometry is PointGeometry {
+    if (!geometry || geometry.type !== 'Point') {
+        return false;
+    }
+    const coords = geometry.coordinates;
+    return (
+        Array.isArray(coords) &&
+        coords.length === 2 &&
+        typeof coords[0] === 'number' &&
+        typeof coords[1] === 'number' &&
+        // Drop the (0, 0) null-island placeholders some feeds emit.
+        (coords[0] !== 0 || coords[1] !== 0)
+    );
+}
+
 const fileContent = fs.readFileSync(fileName, 'utf8');
 const data = JSON.parse(fileContent) as RawFeatureCollection;
+
+const features: TransformedFeature[] = [];
+for (const feature of data.features) {
+    if (!isPoint(feature.geometry)) {
+        continue;
+    }
+    const offense = String(feature.properties[offenseField] ?? '');
+    if (offenseFilter && !offenseFilter.has(offense)) {
+        continue;
+    }
+    const reportedAt = new Date(feature.properties[dateField] as string | number);
+    if (Number.isNaN(reportedAt.getTime())) {
+        continue;
+    }
+    features.push({
+        type: 'Feature',
+        properties: {
+            offense,
+            // age is days since the incident was reported (intensity source)
+            age: Math.floor((Date.now() - reportedAt.getTime()) / MS_PER_DAY),
+            // date the incident was reported, YYYY-MM-DD (status line range)
+            date: reportedAt.toISOString().slice(0, 10),
+        },
+        geometry: feature.geometry,
+    });
+}
+
 const transformedData: TransformedFeatureCollection = {
     type: 'FeatureCollection',
-    features: data.features.filter(isCuratedPoint).map((feature) => {
-        const reportedAt = new Date(feature.properties.REPORT_DAT);
-        return {
-            type: 'Feature',
-            properties: {
-                offense: feature.properties.OFFENSE,
-                // age is days since the incident was reported (intensity source)
-                age: Math.floor((Date.now() - reportedAt.getTime()) / MS_PER_DAY),
-                // date the incident was reported, YYYY-MM-DD (status line range)
-                date: reportedAt.toISOString().slice(0, 10),
-            },
-            geometry: feature.geometry,
-        };
-    }),
+    features,
 };
 
 // Write the transformed data (minified — it is generated, not hand-edited)
-fs.writeFileSync('data.json', JSON.stringify(transformedData));
-console.log(`Wrote ${transformedData.features.length} features to data.json`);
+fs.writeFileSync(outPath, JSON.stringify(transformedData));
+console.log(`Wrote ${features.length} features to ${outPath}`);
