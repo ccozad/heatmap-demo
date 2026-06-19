@@ -1,19 +1,23 @@
 // Leaflet (L), the heatmap.js Leaflet plugin (HeatmapOverlay) and axios are
 // loaded as globals from the CDN/vendored <script> tags in index.html
-// (declared in eslint.config.js).
+// (typed in globals.d.ts, declared for ESLint in eslint.config.js).
+
+import type { HeatmapPoint, TransformedFeatureCollection } from './types';
 
 axios
-    .get('/data.json')
+    .get<TransformedFeatureCollection>('/data.json')
     .then((response) => {
         const fullData = response.data;
-        const allPointFeatures = fullData.features.filter(
-            (feature) => feature.geometry && feature.geometry.type === 'Point',
-        );
-        const points = allPointFeatures.map((feature) => ({
-            lat: feature.geometry.coordinates[1],
-            lng: feature.geometry.coordinates[0],
-            age: feature.properties.age,
-        }));
+        const points: HeatmapPoint[] = fullData.features
+            .filter(
+                (feature) =>
+                    feature.geometry && feature.geometry.type === 'Point',
+            )
+            .map((feature) => ({
+                lat: feature.geometry.coordinates[1],
+                lng: feature.geometry.coordinates[0],
+                age: feature.properties.age,
+            }));
 
         // Create the base Leaflet layer (the map itself)
         const baseLayer = L.tileLayer(
@@ -31,7 +35,7 @@ axios
             valueField: 'age',
         };
 
-        const heatmapLayer = new HeatmapOverlay(cfg);
+        const heatmapLayer = new HeatmapOverlay<HeatmapPoint>(cfg);
 
         // Determine min/max for the heatmap.js plugin
         const min = Math.min(...points.map((point) => point.age));
