@@ -1,0 +1,155 @@
+:root {
+    --gap: 1rem;
+    --panel-bg: #f5f6f8;
+    --border: #d7dbe0;
+    --text: #1c2733;
+    --muted: #5b6672;
+    /* heatmap.js default gradient stops, mirrored in the legend bar */
+    --heat-gradient: linear-gradient(
+        to right,
+        rgba(0, 0, 255, 0.5),
+        cyan,
+        lime,
+        yellow,
+        red
+    );
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family:
+        system-ui,
+        -apple-system,
+        Segoe UI,
+        Roboto,
+        sans-serif;
+    color: var(--text);
+    padding: var(--gap);
+    max-width: 1100px;
+    margin-inline: auto;
+}
+
+.app-header h1 {
+    margin: 0 0 0.25rem;
+    font-size: clamp(1.25rem, 4vw, 1.9rem);
+}
+
+.subtitle {
+    margin: 0;
+    color: var(--muted);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap);
+    margin: var(--gap) 0;
+    padding: var(--gap);
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1 1 200px;
+}
+
+.control label {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.control select,
+.control input[type='range'] {
+    width: 100%;
+}
+
+.map-wrap {
+    position: relative;
+}
+
+#map {
+    width: 100%;
+    height: clamp(360px, 70vh, 720px);
+    border-radius: 8px;
+    z-index: 0;
+}
+
+/* Loading / error overlay */
+.overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.75);
+    z-index: 500;
+}
+
+.overlay[hidden] {
+    display: none;
+}
+
+.overlay-card {
+    padding: 0.75rem 1.25rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    font-weight: 600;
+}
+
+.overlay.error .overlay-card {
+    border-color: #e0b4b4;
+    color: #a12c2c;
+}
+
+/* Legend */
+.legend {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    z-index: 500;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.6rem;
+    width: min(220px, 60vw);
+    font-size: 0.75rem;
+}
+
+.legend-bar {
+    height: 10px;
+    border-radius: 3px;
+    background: var(--heat-gradient);
+}
+
+.legend-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.3rem;
+    color: var(--muted);
+}
+
+.status {
+    margin: var(--gap) 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.app-footer {
+    margin-top: var(--gap);
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.app-footer a {
+    color: inherit;
+}
