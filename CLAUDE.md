@@ -1,0 +1,46 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Overview
+
+A minimal demo that renders a heatmap overlaid on a Leaflet map, using 2024 Washington DC motor vehicle theft crime data as the dataset. Vanilla JavaScript (ESM), built and served with Vite. No tests yet.
+
+## Commands
+
+Run the demo (from `/app`):
+```bash
+cd app && npm install
+npm run dev       # Vite dev server with hot reload at http://localhost:3000/
+npm run build     # production static build → app/dist/
+npm run preview   # serve the built dist/ to verify a production build
+npm run lint      # ESLint (flat config, eslint.config.js)
+npm run format    # Prettier (.prettierrc)
+```
+
+Regenerate the data file (from `/data-pipeline`):
+```bash
+# Download the geojson from https://catalog.data.gov/dataset/crime-incidents-in-2024 into data-pipeline/ first
+node transform-data.js Crime_Incidents_in_2024.geojson   # writes data.json in the cwd
+```
+The script's output `data.json` must be copied to `app/public/data.json` to be served — it is not written there automatically.
+
+## Architecture
+
+Two independent pieces with a hand-carried data handoff between them:
+
+1. **`data-pipeline/transform-data.js`** — An offline, one-shot Node script. Reads the full DC crime geojson, filters to `OFFENSE === "MOTOR VEHICLE THEFT"` Point features, and reduces each feature to just `CCN`, a computed `age` (days since `REPORT_DAT`), and `geometry`. This shrinking is the whole point: it cuts browser load time. To visualize a different crime type or set of fields, edit the `.filter`/`.map` here. Note `age` is computed at transform time relative to `Date.now()`, so it is baked into `data.json` and only refreshes when the pipeline is re-run.
+
+2. **`app/`** — A Vite static site. `app/index.html` is the Vite entry; `app/src/crime.js` is the bundled ESM module; `app/public/` holds assets served at the web root (`data.json`, the vendored `leaflet-heatmap.js`). Build output lands in `app/dist/`.
+   - `index.html` loads Leaflet, axios, and heatmap.js from CDNs (pinned, with SRI hashes); `leaflet-heatmap.js` (the Leaflet plugin) is vendored locally because it isn't on a public CDN. These arrive as globals (`L`, `axios`, `HeatmapOverlay`) — declared in `eslint.config.js` so the ESM module can reference them.
+   - `crime.js` is the entry point: fetches `/data.json`, maps features to `{lat, lng, age}` points, builds an OpenStreetMap base layer + a `HeatmapOverlay`, and composes both into an `L.Map`.
+
+### Heatmap intensity model
+
+The key concept: intensity is driven by `age` via `valueField: 'age'`, and the min/max passed to `heatmapLayer.setData` define the color range. Older thefts render dimmer. The `radius` is fixed (4) but conceptually could be data-driven (e.g. theft value). The map is hard-centered on DC (`38.904722, -77.016389`, zoom 12) in `crime.js` — change those constants if pointing at different data.
+
+## Conventions / gotchas
+
+- No test tooling exists yet; "verifying" means `npm run build`/`npm run preview` and loading the page in a browser. ESLint + Prettier are wired (`npm run lint` / `npm run format`).
+- `data-pipeline/transform-data.js` writes `data.json` to the current directory; it must be copied to `app/public/data.json` to be served. Keep them in sync manually.
+- The leaflet-heatmap plugin (heatmap.js by Patrick Wied) has commercial-use terms — see https://www.patrick-wied.at/static/heatmapjs/ before reusing in a commercial product.

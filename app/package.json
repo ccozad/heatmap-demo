@@ -1,14 +1,26 @@
 {
-  "name": "app",
-  "version": "1.0.0",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  },
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "express": "^5.1.0"
-  }
+    "name": "heatmap-demo-app",
+    "version": "1.0.0",
+    "description": "Static web app that renders a Leaflet heatmap of open crime data.",
+    "type": "module",
+    "author": "Charles Cozad",
+    "license": "ISC",
+    "engines": {
+        "node": ">=20"
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "lint": "eslint .",
+        "format": "prettier --write ."
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.17.0",
+        "eslint": "^9.17.0",
+        "eslint-config-prettier": "^9.1.0",
+        "globals": "^15.14.0",
+        "prettier": "^3.4.2",
+        "vite": "^6.0.7"
+    }
 }

@@ -1,0 +1,14 @@
+{
+  "name": "heatmap-demo-data-pipeline",
+  "version": "1.0.0",
+  "description": "Filters a full crime GeoJSON export down to the fields the heatmap app needs.",
+  "type": "module",
+  "author": "Charles Cozad",
+  "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "transform": "node transform-data.js"
+  }
+}
