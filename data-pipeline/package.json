@@ -9,6 +9,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "transform": "node transform-data.js"
+    "transform": "tsx transform-data.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
   }
 }

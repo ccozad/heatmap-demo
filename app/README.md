@@ -1,7 +1,8 @@
 # Overview
 
-The heatmap demo is a static site built and served with [Vite](https://vite.dev/).
-There is no runtime server — the production build is a folder of static files.
+The heatmap demo is a static site written in TypeScript and built and served with
+[Vite](https://vite.dev/). There is no runtime server — the production build is a
+folder of static files.
 
 # Requirements
 
@@ -13,7 +14,8 @@ Node 20 or newer (see `.nvmrc`, which pins Node 22). From the `/app` directory r
 Run all commands from the `/app` directory:
 
 - `npm run dev` — start the Vite dev server with hot reload at http://localhost:3000/
-- `npm run build` — produce the deployable static site in `app/dist/`
+- `npm run typecheck` — type-check with `tsc --noEmit` (app + Vite config)
+- `npm run build` — type-check, then produce the deployable static site in `app/dist/`
 - `npm run preview` — serve the built `dist/` locally to verify a production build
 - `npm run lint` — run ESLint
 - `npm run format` — format the source with Prettier
